@@ -1,0 +1,77 @@
+services:
+  # Our FastAPI application service
+  api:
+    build: .
+    ports:
+      - "8000:80"
+    volumes:
+      - ./app:/code/app
+      - ./consumer.py:/code/consumer.py
+    environment:
+      - DATABASE_URL=postgresql://user:password@db:5432/market_data_db
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - PYTHONPATH=/code  # <-- ADD THIS LINE
+    depends_on:
+      db:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+
+  # Our new Kafka Consumer service
+  consumer:
+    build: .
+    volumes:
+      - ./app:/code/app
+      - ./consumer.py:/code/consumer.py # Also mount the files here
+    environment:
+      - DATABASE_URL=postgresql://user:password@db:5432/market_data_db
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+    depends_on:
+      - api # Wait for the api service so all files/folders are ready
+    # This overrides the Dockerfile's CMD to run our consumer script instead of the API
+    command: python consumer.py
+
+  # PostgreSQL database service
+  db:
+    image: postgres:13
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=market_data_db
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d market_data_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Zookeeper service (required by Kafka)
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0 # <-- CHANGE THIS
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+
+  # Kafka service
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0 # <-- AND CHANGE THIS
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      # This line is new and explicitly defines the internal listener
+      KAFKA_LISTENERS: PLAINTEXT://:9092 
+      # This line is modified to match the internal listener
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092 
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+
+volumes:
+  postgres_data:
