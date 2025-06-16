@@ -1,0 +1,27 @@
+{
+	"info": {
+		"_postman_id": "85da1762-cb42-4b26-b1a0-d9d6965c906c",
+		"name": "New Collection",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "45906359",
+		"_collection_link": "https://revantmendiratta.postman.co/workspace/Revant-Mendiratta's-Workspace~4fe0596c-822e-41f0-8923-67ee1d8773e8/collection/45906359-85da1762-cb42-4b26-b1a0-d9d6965c906c?action=share&source=collection_link&creator=45906359"
+	},
+	"item": [
+		{
+			"name": "Get Latest Price",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		},
+		{
+			"name": "New Request",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		}
+	]
+}
